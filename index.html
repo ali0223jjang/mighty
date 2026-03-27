@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#080808">
+<title>마이티 마장</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #0d0d14; --surface: #13131e; --card: #1a1a2a; --border: #2a2a40;
+  --accent: #8b0000; --blue: #1a6db5; --gold: #e8a020;
+  --green: #2ecc71; --red: #e74c3c; --text: #e8e8f0; --muted: #6a6a8a; --radius: 12px;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Noto Sans KR','Apple SD Gothic Neo',sans-serif; font-size: 14px; min-height: 100vh; }
+.page { display: none; min-height: 100vh; }
+.page.active { display: block; }
+
+/* 로그인 */
+#page-login { display: none; min-height: 100vh; background: #080808; position: relative; align-items: center; justify-content: center; flex-direction: column; padding: 40px 24px; }
+#page-login.active { display: flex; }
+.login-bg-lines { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.login-bg-line { position: absolute; background: rgba(180,0,0,0.08); height: 1px; width: 100%; }
+.login-bg-kanji { position: absolute; font-size: 200px; font-weight: 900; color: rgba(150,0,0,0.06); right: -30px; top: 50%; transform: translateY(-50%); line-height: 1; font-family: serif; user-select: none; }
+.login-red-line { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: #8b0000; }
+.login-content { position: relative; z-index: 1; width: 100%; max-width: 300px; }
+.login-logo { margin-bottom: 36px; }
+.login-logo h1 { font-size: 24px; font-weight: 900; color: #e8e8e0; letter-spacing: 2px; border-bottom: 1px solid #8b0000; padding-bottom: 12px; }
+.login-label { font-size: 10px; color: #666; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; display: block; }
+.login-input { width: 100%; background: rgba(255,255,255,0.03); border: none; border-bottom: 1px solid #333; color: #e8e8e0; font-size: 15px; padding: 10px 0; outline: none; transition: border-color 0.2s; margin-bottom: 14px; }
+.login-input:focus { border-bottom-color: #8b0000; }
+.login-input::placeholder { color: #333; }
+.login-btn { width: 100%; background: #8b0000; color: #e8e8e0; border: none; border-radius: 2px; padding: 13px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 8px; letter-spacing: 2px; }
+.login-error { color: #e74c3c; font-size: 12px; text-align: center; margin-top: 10px; display: none; }
+
+/* 메인 */
+#page-main { display: none; flex-direction: column; }
+#page-main.active { display: flex; }
+.top-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 14px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 100; }
+.u-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.u-name { font-size: 14px; font-weight: 700; color: var(--gold); }
+.logout-btn { margin-left: auto; font-size: 11px; color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; cursor: pointer; background: transparent; }
+.content { flex: 1; padding: 16px 14px; padding-bottom: 80px; }
+
+/* 탭바 */
+.tab-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(5,1fr); z-index: 100; }
+.tab-item { display: flex; flex-direction: column; align-items: center; padding: 8px 2px 10px; font-size: 9px; color: var(--muted); gap: 3px; cursor: pointer; border: none; background: transparent; }
+.tab-item.active { color: var(--gold); }
+.tab-icon { font-size: 18px; }
+
+/* 홈 */
+.menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.menu-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
+.menu-card:active { opacity: 0.8; }
+.menu-card.primary { border-color: var(--accent); background: rgba(139,0,0,0.1); }
+.menu-icon { font-size: 30px; }
+.menu-label { font-size: 15px; font-weight: 700; }
+.menu-sub { font-size: 11px; color: var(--muted); text-align: center; }
+
+/* 입력 */
+.inputter { text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 16px; letter-spacing: 1px; }
+.inputter span { color: var(--gold); font-weight: 700; }
+.diamond-wrap { position: relative; width: 280px; height: 280px; margin: 0 auto 20px; }
+.d-line { position: absolute; background: var(--border); }
+.d-lv { width: 1px; height: 280px; left: 50%; top: 0; transform: translateX(-50%); }
+.d-lh { height: 1px; width: 280px; top: 50%; left: 0; transform: translateY(-50%); }
+.d-cell { position: absolute; width: 100px; display: flex; flex-direction: column; align-items: center; }
+.d-cell.top    { top: 10px;   left: 50%; transform: translateX(-50%); }
+.d-cell.left   { top: 50%;    left: 4px; transform: translateY(-50%); }
+.d-cell.right  { top: 50%;    right: 4px; transform: translateY(-50%); }
+.d-cell.bottom { bottom: 10px; left: 50%; transform: translateX(-50%); }
+.d-select { width: 100%; background: var(--card); border: none; border-radius: 6px 6px 0 0; color: var(--muted); font-size: 11px; padding: 5px 4px; text-align: center; -webkit-appearance: none; outline: none; border-bottom: 1px solid var(--border); }
+.d-cell.bottom .d-select { color: var(--gold); }
+.d-input { width: 100%; background: var(--card); border: none; border-radius: 0 0 6px 6px; color: var(--text); font-size: 16px; font-weight: 700; padding: 6px 4px; text-align: center; outline: none; }
+.d-cell.bottom .d-input { color: var(--gold); }
+.d-input::placeholder { color: var(--border); font-size: 12px; font-weight: 400; }
+.d-diff { font-size: 10px; font-weight: 700; height: 14px; margin-top: 3px; text-align: center; }
+.d-diff.pos { color: var(--green); }
+.d-diff.neg { color: var(--red); }
+.cam-btn { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; background: var(--accent); border: none; border-radius: 50%; cursor: pointer; margin: 0 auto 12px; }
+.total-check { text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+.total-check span { font-weight: 700; }
+.total-check.ok span { color: var(--green); }
+.total-check.ng span { color: var(--red); }
+.save-btn { width: 100%; background: var(--blue); color: #fff; border: none; border-radius: var(--radius); padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.save-btn:disabled { background: var(--border); color: var(--muted); cursor: default; }
+
+/* 내 성적 */
+.sec-title { text-align: center; font-size: 15px; font-weight: 700; color: var(--gold); margin-bottom: 14px; }
+.stat-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 14px; margin-bottom: 12px; }
+.stat-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.stat-row:last-child { border-bottom: none; }
+.stat-label { color: var(--muted); }
+.stat-val { font-weight: 700; }
+.rank-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+.rank-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 4px; text-align: center; }
+.rank-card.r1 { border-color: var(--gold); }
+.rank-num { font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+.rank-cnt { font-size: 22px; font-weight: 700; }
+.rank-card.r1 .rank-cnt { color: var(--gold); }
+.rank-pct { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+/* 정산 */
+.settle-date { text-align: center; font-size: 14px; font-weight: 700; color: var(--gold); margin-bottom: 12px; }
+.tbl-wrap { overflow-x: auto; margin-bottom: 16px; }
+.s-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 380px; }
+.s-tbl th { background: var(--blue); color: #fff; padding: 8px 5px; text-align: center; font-weight: 700; white-space: nowrap; }
+.s-tbl td { padding: 8px 5px; text-align: center; border-bottom: 1px solid var(--border); white-space: nowrap; color: var(--text); }
+.s-tbl .id-cell { font-weight: 700; color: var(--gold); text-align: left; padding-left: 8px; }
+.row-reset { background: transparent; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); font-size: 10px; padding: 2px 6px; cursor: pointer; }
+.calc-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+.person-block { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+.person-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.person-name { font-size: 14px; font-weight: 700; color: var(--gold); }
+.person-total { font-size: 15px; font-weight: 700; }
+.input-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.input-item label { font-size: 10px; color: var(--muted); display: block; margin-bottom: 3px; text-align: center; }
+.input-item input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--gold); font-size: 13px; font-weight: 700; padding: 7px 4px; text-align: center; outline: none; }
+
+/* 전체기록 */
+.filter-row { display: flex; gap: 6px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
+.f-select { background: var(--card); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 7px 10px; font-size: 13px; -webkit-appearance: none; }
+.f-btn { background: var(--blue); color: #fff; border: none; border-radius: 6px; padding: 7px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.wr-btn { background: var(--accent); color: #fff; border: none; border-radius: 6px; padding: 7px 12px; font-size: 13px; font-weight: 700; cursor: pointer; margin-left: auto; }
+.ar-title { text-align: center; font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+.ar-tbl { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 460px; }
+.ar-tbl th { background: var(--blue); color: #fff; padding: 8px 5px; text-align: center; font-weight: 700; white-space: nowrap; }
+.ar-tbl td { padding: 8px 5px; text-align: center; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.ar-tbl .id-cell { font-weight: 700; color: var(--gold); text-align: left; padding-left: 10px; }
+.ar-tbl .muted { color: var(--muted); font-size: 11px; }
+
+/* 관리자 */
+.game-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; overflow: hidden; }
+.game-header { background: rgba(26,109,181,0.15); padding: 7px 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); }
+.game-no { font-size: 13px; font-weight: 700; color: var(--gold); min-width: 40px; }
+.game-date { font-size: 11px; color: var(--muted); }
+.game-inp { font-size: 11px; color: var(--muted); margin-left: auto; }
+.game-body { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; }
+.gp { padding: 8px 4px; text-align: center; border-right: 1px solid var(--border); }
+.gp:last-child { border-right: none; }
+.gp.win { background: rgba(139,0,0,0.1); }
+.gp-name { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+.gp-rank { font-size: 10px; color: var(--gold); font-weight: 700; }
+.gp-score { font-size: 12px; font-weight: 700; }
+.game-footer { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--border); }
+.foot-btn { padding: 9px; text-align: center; font-size: 13px; font-weight: 700; border: none; background: transparent; cursor: pointer; }
+.foot-btn.restore { color: var(--blue); border-right: 1px solid var(--border); }
+.foot-btn.del { color: var(--red); }
+
+/* 유저관리 */
+.add-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; }
+.add-title { font-size: 12px; color: var(--muted); font-weight: 700; margin-bottom: 10px; }
+.add-row { display: flex; gap: 8px; }
+.add-input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 13px; padding: 8px 10px; outline: none; }
+.add-input::placeholder { color: var(--muted); }
+.add-btn { background: var(--blue); color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.user-row { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+.u-av { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.u-nm { flex: 1; font-size: 13px; font-weight: 700; }
+.u-del { font-size: 11px; padding: 4px 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: 700; background: rgba(231,76,60,0.2); color: var(--red); }
+
+/* 공통 */
+.pos { color: var(--green); } .neg { color: var(--red); } .gold { color: var(--gold); }
+.empty-msg { text-align: center; color: var(--muted); padding: 40px 0; font-size: 13px; }
+.toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(20,20,30,0.95); border: 1px solid var(--border); color: var(--text); padding: 10px 20px; border-radius: 20px; font-size: 13px; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 999; white-space: nowrap; }
+.toast.show { opacity: 1; }
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 500; align-items: center; justify-content: center; }
+.modal-bg.show { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; width: 90%; max-width: 360px; }
+.modal h3 { font-size: 15px; margin-bottom: 14px; color: var(--gold); }
+.modal-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.modal-btn { padding: 10px; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.modal-btn.confirm { background: var(--red); color: #fff; }
+.modal-btn.cancel { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+.wr-tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+.wr-tbl th { background: var(--blue); color: #fff; padding: 7px 5px; text-align: center; }
+.wr-tbl td { padding: 7px 5px; text-align: center; border-bottom: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div id="page-login" class="page active">
+  <div class="login-bg-lines">
+    <div class="login-bg-line" style="top:20%"></div>
+    <div class="login-bg-line" style="top:40%"></div>
+    <div class="login-bg-line" style="top:60%"></div>
+    <div class="login-bg-line" style="top:80%"></div>
+  </div>
+  <div class="login-bg-kanji">牌</div>
+  <div class="login-red-line"></div>
+  <div class="login-content">
+    <div class="login-logo"><h1>마이티 마장</h1></div>
+    <label class="login-label">Nickname</label>
+    <input class="login-input" id="login-nick" type="text" placeholder="닉네임" autocomplete="off">
+    <label class="login-label">Password</label>
+    <input class="login-input" id="login-pw" type="password" placeholder="비밀번호">
+    <button class="login-btn" onclick="doLogin()">입장</button>
+    <div class="login-error" id="login-error">닉네임 또는 비밀번호가 틀렸습니다</div>
+  </div>
+</div>
+
+<!-- 메인 -->
+<div id="page-main" class="page">
+  <div class="top-bar">
+    <div class="u-avatar" id="main-avatar">알</div>
+    <div class="u-name" id="main-uname">알리 님</div>
+    <button class="logout-btn" onclick="doLogout()">로그아웃</button>
+  </div>
+  <div class="content">
+
+    <!-- 홈 -->
+    <div id="view-home">
+      <div class="menu-grid">
+        <div class="menu-card primary" onclick="showView('input')"><div class="menu-icon">✏️</div><div class="menu-label">입력</div><div class="menu-sub">점수 기록</div></div>
+        <div class="menu-card" onclick="showView('myscore')"><div class="menu-icon">📋</div><div class="menu-label">내 성적</div><div class="menu-sub">오늘 내 성적</div></div>
+        <div class="menu-card" onclick="showView('settle')"><div class="menu-icon">💰</div><div class="menu-label">정산</div><div class="menu-sub">최종 금액 확인</div></div>
+        <div class="menu-card" onclick="showView('allrecords')"><div class="menu-icon">📊</div><div class="menu-label">전체기록</div><div class="menu-sub">연도별 통계</div></div>
+        <div class="menu-card" onclick="showView('admin')"><div class="menu-icon">⚙️</div><div class="menu-label">관리자</div><div class="menu-sub">게임 복구/삭제</div></div>
+        <div class="menu-card" onclick="showView('usermgmt')"><div class="menu-icon">👥</div><div class="menu-label">유저관리</div><div class="menu-sub">유저 추가/삭제</div></div>
+      </div>
+    </div>
+
+    <!-- 입력 -->
+    <div id="view-input" style="display:none">
+      <div class="inputter">입력자 · <span id="input-uname">-</span></div>
+      <div class="diamond-wrap">
+        <div class="d-line d-lv"></div>
+        <div class="d-line d-lh"></div>
+        <div class="d-cell top">
+          <select class="d-select" id="sel-top"></select>
+          <input class="d-input" id="sc-top" type="number" placeholder="점수" inputmode="numeric" oninput="onScore()">
+          <div class="d-diff" id="df-top"></div>
+        </div>
+        <div class="d-cell left">
+          <select class="d-select" id="sel-left"></select>
+          <input class="d-input" id="sc-left" type="number" placeholder="점수" inputmode="numeric" oninput="onScore()">
+          <div class="d-diff" id="df-left"></div>
+        </div>
+        <div class="d-cell right">
+          <select class="d-select" id="sel-right"></select>
+          <input class="d-input" id="sc-right" type="number" placeholder="점수" inputmode="numeric" oninput="onScore()">
+          <div class="d-diff" id="df-right"></div>
+        </div>
+        <div class="d-cell bottom">
+          <select class="d-select" id="sel-bottom"></select>
+          <input class="d-input" id="sc-bottom" type="number" placeholder="점수" inputmode="numeric" oninput="onScore()">
+          <div class="d-diff" id="df-bottom"></div>
+        </div>
+      </div>
+      <input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this)">
+      <button class="cam-btn" onclick="document.getElementById('cam-input').click()">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+      </button>
+      <div id="cam-status" style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:8px;min-height:16px"></div>
+      <div class="total-check" id="total-check">합계: <span>—</span></div>
+      <button class="save-btn" id="save-btn" onclick="doSaveGame()" disabled>저장</button>
+    </div>
+
+    <!-- 내 성적 -->
+    <div id="view-myscore" style="display:none">
+      <div class="sec-title" id="myscore-title"></div>
+      <div id="myscore-content"></div>
+    </div>
+
+    <!-- 정산 -->
+    <div id="view-settle" style="display:none">
+      <div class="settle-date" id="settle-date"></div>
+      <div class="tbl-wrap"><table class="s-tbl" id="settle-tbl"></table></div>
+      <div class="calc-title">총 계산</div>
+      <div id="calc-rows"></div>
+    </div>
+
+    <!-- 전체기록 -->
+    <div id="view-allrecords" style="display:none">
+      <div class="filter-row">
+        <select class="f-select" id="ar-year" onchange="renderAllRecords()"></select>
+        <select class="f-select" id="ar-month" onchange="renderAllRecords()">
+          <option value="전체">전체</option>
+          <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option>
+          <option value="4">4월</option><option value="5">5월</option><option value="6">6월</option>
+          <option value="7">7월</option><option value="8">8월</option><option value="9">9월</option>
+          <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+        </select>
+        <button class="f-btn" onclick="renderAllRecords()">이동</button>
+        <button class="wr-btn" onclick="showWinrate()">상대승률</button>
+      </div>
+      <div class="ar-title" id="ar-title">종합기록</div>
+      <div class="tbl-wrap"><div id="ar-content"></div></div>
+    </div>
+
+    <!-- 관리자 -->
+    <div id="view-admin" style="display:none">
+      <div class="filter-row">
+        <select class="f-select" id="adm-year"></select>
+        <select class="f-select" id="adm-month">
+          <option value="전체">전체</option>
+          <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option>
+          <option value="4">4월</option><option value="5">5월</option><option value="6">6월</option>
+          <option value="7">7월</option><option value="8">8월</option><option value="9">9월</option>
+          <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+        </select>
+        <button class="f-btn" onclick="renderAdmin()">이동</button>
+      </div>
+      <div id="admin-list"></div>
+    </div>
+
+    <!-- 유저관리 -->
+    <div id="view-usermgmt" style="display:none">
+      <div class="sec-title">유저 관리</div>
+      <div class="add-box">
+        <div class="add-title">유저 추가</div>
+        <div class="add-row">
+          <input class="add-input" id="new-nick" placeholder="닉네임 입력">
+          <button class="add-btn" onclick="addUser()">추가</button>
+        </div>
+      </div>
+      <div id="user-list"></div>
+    </div>
+  </div>
+
+  <!-- 탭바 -->
+  <div class="tab-bar">
+    <button class="tab-item active" onclick="showView('home')"><div class="tab-icon">🏠</div>홈</button>
+    <button class="tab-item" onclick="showView('input')"><div class="tab-icon">✏️</div>입력</button>
+    <button class="tab-item" onclick="showView('myscore')"><div class="tab-icon">📋</div>내성적</button>
+    <button class="tab-item" onclick="showView('settle')"><div class="tab-icon">💰</div>정산</button>
+    <button class="tab-item" onclick="showView('admin')"><div class="tab-icon">⚙️</div>관리</button>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<div class="modal-bg" id="modal-delete">
+  <div class="modal">
+    <h3>게임 삭제</h3>
+    <p style="color:var(--muted);font-size:13px">이 게임 기록을 삭제할까요?</p>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeModal('modal-delete')">취소</button>
+      <button class="modal-btn confirm" onclick="confirmDelete()">삭제</button>
+    </div>
+  </div>
+</div>
+<div class="modal-bg" id="modal-winrate">
+  <div class="modal" style="max-width:400px">
+    <h3>상대승률 (1위 기준)</h3>
+    <div id="wr-content" style="overflow-x:auto;max-height:60vh;overflow-y:auto"></div>
+    <div class="modal-btns" style="grid-template-columns:1fr">
+      <button class="modal-btn cancel" onclick="closeModal('modal-winrate')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://uwzxkywjapymxwqjvvwb.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3enhreXdqYXB5bXh3cWp2dndiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0OTk5MjgsImV4cCI6MjA5MDA3NTkyOH0._0JKugu0WJzOjF41pWc0E3NbBFLPvJUK7n0eT1bZm-o';
+const START=25000,UMA=[45,5,-15,-35],CHIP_VAL=5000,PW='1111';
+const POS=['top','left','right','bottom'];
+const COLORS=['#1a6db5','#c8194a','#2ecc71','#9b59b6','#e8a020','#6a6a8a'];
+let state={currentUser:null,users:[],games:[],deleteTarget:null};
+
+async function sbFetch(path,options={}){
+  const res=await fetch(SUPABASE_URL+'/rest/v1/'+path,{
+    headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':options.prefer||''},
+    ...options
+  });
+  if(!res.ok){console.error('Supabase error:',await res.text());return null;}
+  const text=await res.text();return text?JSON.parse(text):null;
+}
+
+// ── 한국시간 유틸
+function toKST(date) {
+  const d = new Date(date);
+  return new Date(d.getTime() + 9 * 60 * 60 * 1000);
+}
+function kstNow() {
+  return toKST(new Date());
+}
+function kstStr(date) {
+  const d = toKST(date);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')} ${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`;
+}
+function kstDateOnly(date) {
+  const d = toKST(date);
+  return `${d.getUTCFullYear()}.${String(d.getUTCMonth()+1).padStart(2,'0')}.${String(d.getUTCDate()).padStart(2,'0')}`;
+}
+function kstYear(date) { return toKST(date).getUTCFullYear(); }
+function kstMonth(date) { return toKST(date).getUTCMonth()+1; }
+
+async function load(){
+  showToast('데이터 불러오는 중...');
+  const [users,games]=await Promise.all([
+    sbFetch('users?select=nick&order=created_at.asc'),
+    sbFetch('games?select=*&order=no.asc')
+  ]);
+  if(users)state.users=users.map(u=>({nick:u.nick}));
+  if(games)state.games=games.map(g=>({id:g.id,no:g.no,date:g.date||g.created_at,inputter:g.inputter,players:g.players}));
+  const sn=localStorage.getItem('mighty_nick');
+  if(sn)document.getElementById('login-nick').value=sn;
+  updateYearOptions();
+}
+
+function doLogin(){
+  const nick=document.getElementById('login-nick').value.trim();
+  const pw=document.getElementById('login-pw').value;
+  const err=document.getElementById('login-error');
+  if(!state.users.find(u=>u.nick===nick)||pw!==PW){err.style.display='block';return;}
+  err.style.display='none';
+  state.currentUser=nick;
+  localStorage.setItem('mighty_nick',nick);
+  document.getElementById('main-avatar').textContent=nick[0];
+  document.getElementById('main-uname').textContent=nick+' 님';
+  document.getElementById('input-uname').textContent=nick;
+  document.getElementById('page-login').classList.remove('active');
+  document.getElementById('page-main').classList.add('active');
+  updateSelects(); updateYearOptions(); showView('home');
+}
+function doLogout(){
+  state.currentUser=null;
+  document.getElementById('login-pw').value='';
+  document.getElementById('page-main').classList.remove('active');
+  document.getElementById('page-login').classList.add('active');
+}
+
+const VIEWS=['home','input','myscore','settle','allrecords','admin','usermgmt'];
+function showView(v){
+  VIEWS.forEach(id=>document.getElementById('view-'+id).style.display=id===v?'block':'none');
+  document.querySelectorAll('.tab-item').forEach((t,i)=>t.classList.toggle('active',['home','input','myscore','settle','admin'][i]===v));
+  if(v==='myscore')renderMyscore();
+  if(v==='settle')renderSettle();
+  if(v==='allrecords')renderAllRecords();
+  if(v==='admin')renderAdmin();
+  if(v==='usermgmt')renderUsers();
+  if(v==='input')updateSelects();
+}
+
+function updateSelects(){
+  const uid=state.currentUser;
+  POS.forEach(pos=>{
+    const sel=document.getElementById('sel-'+pos);
+    if(pos==='bottom'){sel.innerHTML=`<option value="${uid}">${uid}</option>`;}
+    else{
+      const cur=sel.value;
+      sel.innerHTML='<option value="">선택</option>'+state.users.filter(u=>u.nick!==uid).map(u=>`<option value="${u.nick}">${u.nick}</option>`).join('');
+      if(cur)sel.value=cur;
+    }
+  });
+}
+
+function onScore(){
+  let total=0,filled=0;
+  POS.forEach(pos=>{
+    const v=document.getElementById('sc-'+pos).value;
+    const df=document.getElementById('df-'+pos);
+    if(v===''){df.textContent='';df.className='d-diff';return;}
+    const num=parseInt(v), diff=num-START;
+    df.textContent=(diff>=0?'+':'')+diff.toLocaleString();
+    df.className='d-diff '+(diff>=0?'pos':'neg');
+    total+=num;filled++;
+  });
+  const el=document.getElementById('total-check'),btn=document.getElementById('save-btn');
+  if(!filled){el.innerHTML='합계: <span>—</span>';el.className='total-check';btn.disabled=true;return;}
+  el.innerHTML=`합계: <span>${total.toLocaleString()}</span>`;
+  const ok=total===100000;
+  el.className='total-check '+(ok?'ok':'ng');
+  btn.disabled=!ok||filled<4;
+}
+
+async function doSaveGame(){
+  const uid=state.currentUser;
+  const players=POS.map(pos=>({id:document.getElementById('sel-'+pos).value,score:parseInt(document.getElementById('sc-'+pos).value)||0}));
+  if(players.some(p=>!p.id)){showToast('플레이어를 모두 선택하세요');return;}
+  if(new Set(players.map(p=>p.id)).size<4){showToast('중복된 플레이어가 있습니다');return;}
+  const ranks=calcRanks(players.map(p=>p.score));
+  const umas=calcUma(players.map(p=>p.score));
+  const maxNo=state.games.length?Math.max(...state.games.map(g=>g.no)):0;
+  const gameData={
+    no:maxNo+1,
+    date:new Date().toISOString(),
+    inputter:uid,
+    players:players.map((p,i)=>({id:p.id,score:p.score,diff:p.score-START,rank:ranks[i],uma:umas[i]}))
+  };
+  showToast('저장 중...');
+  const res=await sbFetch('games',{method:'POST',prefer:'return=representation',body:JSON.stringify(gameData)});
+  if(res&&res[0]){
+    state.games.push({...gameData,id:res[0].id});
+    updateYearOptions();
+    showToast(`✅ ${gameData.no}국 저장 완료!`);
+    POS.forEach(pos=>{
+      document.getElementById('sc-'+pos).value='';
+      document.getElementById('df-'+pos).textContent='';
+      document.getElementById('df-'+pos).className='d-diff';
+    });
+    document.getElementById('total-check').innerHTML='합계: <span>—</span>';
+    document.getElementById('total-check').className='total-check';
+    document.getElementById('save-btn').disabled=true;
+    showView('home');
+  } else { showToast('저장 실패. 다시 시도해주세요'); }
+}
+
+async function handlePhoto(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const status = document.getElementById('cam-status');
+  status.style.color = 'var(--gold)';
+  status.textContent = 'AI가 점수를 인식하는 중...';
+
+  try {
+    const base64 = await new Promise((res,rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result.split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'anthropic-dangerous-direct-browser-calls': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 200,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
+            { type: 'text', text: '이 마작 점수 기계 화면에서 숫자 4개를 읽어주세요. 화면에 다이아몬드 형태로 상/좌/우/하 위치에 숫자가 있습니다. 반드시 JSON 형식으로만 답하세요: {"top":숫자,"left":숫자,"right":숫자,"bottom":숫자} 숫자만 있고 다른 텍스트는 없어야 합니다.' }
+          ]
+        }]
+      })
+    });
+
+    const data = await resp.json();
+    const text = data.content[0].text.trim();
+    const scores = JSON.parse(text);
+
+    // 숫자×100 해서 실제 점수로 변환
+    const mapping = { top: scores.top, left: scores.left, right: scores.right, bottom: scores.bottom };
+    Object.entries(mapping).forEach(([pos, val]) => {
+      const input = document.getElementById('sc-'+pos);
+      if(input && val) input.value = Math.round(val) * 100;
+    });
+    onScore();
+    status.style.color = 'var(--green)';
+    status.textContent = '✔ 점수 인식 완료! 확인 후 저장하세요';
+    setTimeout(()=>status.textContent='', 3000);
+  } catch(e) {
+    console.error(e);
+    status.style.color = 'var(--red)';
+    status.textContent = '인식 실패. 직접 입력해주세요';
+    setTimeout(()=>status.textContent='', 3000);
+  }
+  input.value = '';
+}
+function calcUma(scores){
+  const ranks=calcRanks(scores),n=scores.length,umas=new Array(n).fill(0);
+  let i=0;
+  while(i<n){
+    const r=ranks[i],tied=ranks.reduce((acc,rr,idx)=>rr===r?[...acc,idx]:acc,[]);
+    const avg=Math.round(tied.map(idx=>UMA[ranks[idx]-1]).reduce((a,b)=>a+b,0)/tied.length);
+    tied.forEach(idx=>umas[idx]=avg);i+=tied.length;
+  }
+  return umas;
+}
+
+async function renderMyscore(){
+  const uid=state.currentUser;
+  document.getElementById('myscore-title').textContent=uid+' 님';
+  const el=document.getElementById('myscore-content');
+  el.innerHTML='<div class="empty-msg">불러오는 중...</div>';
+
+  // 최신 게임 데이터 다시 로드
+  const games=await sbFetch('games?select=*&order=no.asc');
+  if(games)state.games=games.map(g=>({id:g.id,no:g.no,date:g.date||g.created_at,inputter:g.inputter,players:g.players}));
+
+  // Supabase에서 리셋 게임 번호 가져오기
+  const resetData=await sbFetch('resets?nick=eq.'+encodeURIComponent(uid)+'&select=last_game_no');
+  const lastNo=resetData&&resetData[0]?resetData[0].last_game_no||0:0;
+
+  const myGames=state.games.filter(g=>g.no>lastNo&&g.players.some(p=>p.id===uid));
+  if(!myGames.length){el.innerHTML='<div class="empty-msg">기록이 없습니다</div>';return;}
+  let diff=0,uma=0,count=0,ranks=[0,0,0,0];
+  myGames.forEach(g=>{
+    const p=g.players.find(p=>p.id===uid);if(!p)return;
+    diff+=p.diff;
+    const umaNew=calcUmaNew(p.diff,p.rank);
+    uma+=umaNew;count++;
+    if(p.rank>=1&&p.rank<=4)ranks[p.rank-1]++;
+  });
+  const point=uma*1000;
+  el.innerHTML=`
+    <div class="stat-box">
+      <div class="stat-row"><span class="stat-label">총 국수</span><span class="stat-val gold">${count}국</span></div>
+      <div class="stat-row"><span class="stat-label">점수 합계</span><span class="stat-val ${diff>=0?'pos':'neg'}">${diff>=0?'+':''}${diff.toLocaleString()}</span></div>
+      <div class="stat-row"><span class="stat-label">우마</span><span class="stat-val ${uma>=0?'pos':'neg'}">${uma>=0?'+':''}${uma}</span></div>
+      <div class="stat-row"><span class="stat-label">포인트</span><span class="stat-val ${point>=0?'pos':'neg'}">${point>=0?'+':''}${point.toLocaleString()}</span></div>
+      <div class="stat-row"><span class="stat-label">최종 합계</span><span class="stat-val ${point>=0?'pos':'neg'}" style="font-size:17px">${point>=0?'+':''}${point.toLocaleString()}</span></div>
+    </div>
+    <div class="rank-grid">
+      <div class="rank-card r1"><div class="rank-num">1위</div><div class="rank-cnt">${ranks[0]}</div><div class="rank-pct">${count?Math.round(ranks[0]/count*100):0}%</div></div>
+      <div class="rank-card"><div class="rank-num">2위</div><div class="rank-cnt">${ranks[1]}</div><div class="rank-pct">${count?Math.round(ranks[1]/count*100):0}%</div></div>
+      <div class="rank-card"><div class="rank-num">3위</div><div class="rank-cnt">${ranks[2]}</div><div class="rank-pct">${count?Math.round(ranks[2]/count*100):0}%</div></div>
+      <div class="rank-card"><div class="rank-num">4위</div><div class="rank-cnt">${ranks[3]}</div><div class="rank-pct">${count?Math.round(ranks[3]/count*100):0}%</div></div>
+    </div>`;
+}
+
+async function renderSettle(){
+  const d=kstNow();
+  document.getElementById('settle-date').textContent=`${d.getUTCFullYear()}.${String(d.getUTCMonth()+1).padStart(2,'0')}.${String(d.getUTCDate()).padStart(2,'0')} 정산`;
+
+  // 최신 데이터 로드
+  const [gamesData, resetData]=await Promise.all([
+    sbFetch('games?select=*&order=no.asc'),
+    sbFetch('resets?select=nick,last_game_no')
+  ]);
+  if(gamesData)state.games=gamesData.map(g=>({id:g.id,no:g.no,date:g.date||g.created_at,inputter:g.inputter,players:g.players}));
+  const resetMap={};
+  (resetData||[]).forEach(r=>resetMap[r.nick]=r.last_game_no||0);
+
+  const stats={};
+  state.users.forEach(u=>{stats[u.nick]={id:u.nick,diff:0,uma:0,point:0,count:0,lastNo:resetMap[u.nick]||0};});
+
+  state.games.forEach(g=>g.players.forEach(p=>{
+    if(!stats[p.id])stats[p.id]={id:p.id,diff:0,uma:0,point:0,count:0,lastNo:resetMap[p.id]||0};
+    if(g.no<=stats[p.id].lastNo)return;
+    stats[p.id].diff+=p.diff;
+    const umaNew=calcUmaNew(p.diff,p.rank);
+    stats[p.id].uma+=umaNew;
+    stats[p.id].point+=umaNew*1000;
+    stats[p.id].count++;
+  }));
+
+  const rows=Object.values(stats).filter(s=>s.count>0).sort((a,b)=>b.point-a.point);
+
+  document.getElementById('settle-tbl').innerHTML=`
+    <tr><th>아이디</th><th>점수</th><th>우마</th><th>포인트</th><th>국수</th><th></th></tr>
+    ${rows.map((s,i)=>`<tr id="str-${i}">
+      <td class="id-cell">${s.id}</td>
+      <td class="${s.diff>=0?'pos':'neg'}">${s.diff>=0?'+':''}${s.diff.toLocaleString()}</td>
+      <td class="${s.uma>=0?'pos':'neg'}">${s.uma>=0?'+':''}${s.uma}</td>
+      <td class="${s.point>=0?'pos':'neg'}" style="font-weight:700">${s.point>=0?'+':''}${s.point.toLocaleString()}</td>
+      <td>${s.count}</td>
+      <td><button class="row-reset" onclick="settleOne('${s.id}',${i})">리셋</button></td>
+    </tr>`).join('')}`;
+
+  document.getElementById('calc-rows').innerHTML=rows.map((s,i)=>`
+    <div class="person-block" id="pb-${i}">
+      <div class="person-header">
+        <div class="person-name">${s.id}</div>
+        <div class="person-total ${s.point>=0?'pos':'neg'}" id="pt-${i}">${s.point>=0?'+':''}${s.point.toLocaleString()}원</div>
+      </div>
+      <div class="input-grid">
+        <div class="input-item"><label>칩</label><input type="number" id="chip-${i}" placeholder="0" inputmode="numeric" oninput="calcOne(${i},${s.point})"></div>
+        <div class="input-item"><label>게임비</label><input type="number" id="fee-${i}" placeholder="0" inputmode="numeric" oninput="calcOne(${i},${s.point})"></div>
+        <div class="input-item"><label>음료수</label><input type="number" id="drink-${i}" placeholder="0" inputmode="numeric" oninput="calcOne(${i},${s.point})"></div>
+      </div>
+    </div>`).join('');
+}
+
+function calcOne(i,point){
+  const chip=parseInt(document.getElementById('chip-'+i).value)||0;
+  const fee=parseInt(document.getElementById('fee-'+i).value)||0;
+  const drink=parseInt(document.getElementById('drink-'+i).value)||0;
+  const total=point+chip*CHIP_VAL-fee-drink;
+  const el=document.getElementById('pt-'+i);
+  el.textContent=(total>=0?'+':'')+total.toLocaleString()+'원';
+  el.className='person-total '+(total>=0?'pos':'neg');
+}
+
+function calcRanks(scores){const s=[...scores].sort((a,b)=>b-a);return scores.map(sc=>s.indexOf(sc)+1);}
+function calcUmaNew(diff, rank) {
+  return Math.round(diff/1000) + UMA[rank-1];
+}
+
+async function settleOne(nick,i){
+  // 현재 해당 유저의 마지막 게임 번호 찾기
+  const myGames=state.games.filter(g=>g.players.some(p=>p.id===nick));
+  const lastNo=myGames.length?Math.max(...myGames.map(g=>g.no)):0;
+
+  // resets 테이블에 마지막 게임 번호 저장
+  await sbFetch('resets',{
+    method:'POST',
+    prefer:'resolution=merge-duplicates',
+    body:JSON.stringify({nick, reset_at:new Date().toISOString(), last_game_no:lastNo})
+  });
+  document.getElementById('str-'+i).style.display='none';
+  document.getElementById('pb-'+i).style.display='none';
+  showToast(`${nick} 정산 완료!`);
+}
+
+function renderAllRecords(){
+  const year=document.getElementById('ar-year').value,month=document.getElementById('ar-month').value;
+  document.getElementById('ar-title').textContent=`${year==='전체'?'전체':year+'년'} ${month!=='전체'?month+'월 ':''}종합기록`;
+  let games=[...state.games];
+  if(year!=='전체')games=games.filter(g=>kstYear(g.date)==year);
+  if(month!=='전체')games=games.filter(g=>kstMonth(g.date)==month);
+  const el=document.getElementById('ar-content');
+  if(!games.length){el.innerHTML='<div class="empty-msg">기록이 없습니다</div>';return;}
+  const stats={};
+  state.users.forEach(u=>{stats[u.nick]={id:u.nick,diff:0,uma:0,point:0,count:0,ranks:[0,0,0,0]};});
+  games.forEach(g=>g.players.forEach(p=>{
+    if(!stats[p.id])stats[p.id]={id:p.id,diff:0,uma:0,point:0,count:0,ranks:[0,0,0,0]};
+    stats[p.id].diff+=p.diff;stats[p.id].uma+=p.uma;stats[p.id].point+=(p.diff+p.uma*1000);stats[p.id].count++;
+    if(p.rank>=1&&p.rank<=4)stats[p.id].ranks[p.rank-1]++;
+  }));
+  const rows=Object.values(stats).filter(s=>s.count>0).sort((a,b)=>b.point-a.point);
+  el.innerHTML=`<table class="ar-tbl">
+    <tr><th>아이디</th><th>점수</th><th>우마</th><th>포인트</th><th>합계</th><th>국수</th><th>순위</th></tr>
+    ${rows.map(s=>`<tr>
+      <td class="id-cell">${s.id}</td>
+      <td class="${s.diff>=0?'pos':'neg'}">${s.diff>=0?'+':''}${s.diff.toLocaleString()}</td>
+      <td class="${s.uma>=0?'pos':'neg'}">${s.uma>=0?'+':''}${s.uma}</td>
+      <td class="${s.point>=0?'pos':'neg'}">${s.point>=0?'+':''}${s.point.toLocaleString()}</td>
+      <td class="${s.point>=0?'pos':'neg'}" style="font-weight:700">${s.point>=0?'+':''}${s.point.toLocaleString()}</td>
+      <td>${s.count}</td>
+      <td class="muted">${s.ranks.join('/')}</td>
+    </tr>`).join('')}
+  </table>`;
+}
+
+function renderAdmin(){
+  const year=document.getElementById('adm-year').value,month=document.getElementById('adm-month').value;
+  let games=[...state.games].reverse();
+  if(year!=='전체')games=games.filter(g=>kstYear(g.date)==year);
+  if(month!=='전체')games=games.filter(g=>kstMonth(g.date)==month);
+  const el=document.getElementById('admin-list');
+  if(!games.length){el.innerHTML='<div class="empty-msg">기록이 없습니다</div>';return;}
+  el.innerHTML=games.map(g=>{
+    const ds=kstStr(g.date);
+    const sorted=[...g.players].sort((a,b)=>a.rank-b.rank);
+    return `<div class="game-card">
+      <div class="game-header"><span class="game-no">${g.no}</span><span class="game-date">${ds}</span><span class="game-inp">입력:${g.inputter}</span></div>
+      <div class="game-body">${sorted.map(p=>`
+        <div class="gp ${p.rank===1?'win':''}">
+          <div class="gp-name">${p.id}</div>
+          <div class="gp-rank">${p.rank}위</div>
+          <div class="gp-score ${p.diff>=0?'pos':'neg'}">${p.diff>=0?'+':''}${p.diff.toLocaleString()}</div>
+        </div>`).join('')}
+      </div>
+      <div class="game-footer">
+        <button class="foot-btn restore" onclick="showToast('복구 기능 준비 중')">복구</button>
+        <button class="foot-btn del" onclick="askDelete(${g.id})">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function askDelete(id){state.deleteTarget=id;document.getElementById('modal-delete').classList.add('show');}
+async function confirmDelete(){
+  showToast('삭제 중...');
+  await sbFetch('games?id=eq.'+state.deleteTarget,{method:'DELETE'});
+  state.games=state.games.filter(g=>g.id!==state.deleteTarget);
+  closeModal('modal-delete');renderAdmin();showToast('삭제되었습니다');
+}
+
+function renderUsers(){
+  document.getElementById('user-list').innerHTML=state.users.map((u,i)=>`
+    <div class="user-row">
+      <div class="u-av" style="background:${COLORS[i%COLORS.length]}">${u.nick[0]}</div>
+      <div class="u-nm">${u.nick}</div>
+      <button class="u-del" onclick="delUser('${u.nick}')">삭제</button>
+    </div>`).join('');
+}
+async function addUser(){
+  const nick=document.getElementById('new-nick').value.trim();
+  if(!nick){showToast('닉네임을 입력하세요');return;}
+  if(state.users.find(u=>u.nick===nick)){showToast('이미 존재하는 닉네임');return;}
+  showToast('추가 중...');
+  const res=await sbFetch('users',{method:'POST',prefer:'return=minimal',body:JSON.stringify({nick})});
+  state.users.push({nick});renderUsers();updateSelects();
+  document.getElementById('new-nick').value='';showToast(`✅ ${nick} 추가됨`);
+}
+async function delUser(nick){
+  if(!confirm(`${nick}를 삭제할까요?`))return;
+  await sbFetch('users?nick=eq.'+encodeURIComponent(nick),{method:'DELETE'});
+  state.users=state.users.filter(u=>u.nick!==nick);
+  renderUsers();updateSelects();showToast(`${nick} 삭제됨`);
+}
+
+function showWinrate(){
+  const active=[...new Set(state.games.flatMap(g=>g.players.map(p=>p.id)))];
+  if(!active.length){showToast('기록이 없습니다');return;}
+  const m={};
+  active.forEach(a=>{m[a]={};active.forEach(b=>{if(a!==b)m[a][b]={g:0,w:0};});});
+  state.games.forEach(g=>g.players.forEach(p=>{
+    g.players.forEach(o=>{if(o.id===p.id||!m[p.id]||!m[p.id][o.id])return;m[p.id][o.id].g++;if(p.rank===1)m[p.id][o.id].w++;});
+  }));
+  let html=`<table class="wr-tbl"><tr><th>↓나\\상대→</th>${active.map(u=>`<th>${u}</th>`).join('')}</tr>`;
+  active.forEach(a=>{
+    html+=`<tr><td style="font-weight:700;color:var(--gold);white-space:nowrap">${a}</td>`;
+    active.forEach(b=>{
+      if(a===b){html+=`<td style="background:var(--card)">-</td>`;return;}
+      const d=m[a]?.[b];
+      if(!d||!d.g){html+=`<td style="color:var(--muted)">-</td>`;return;}
+      const pct=Math.round(d.w/d.g*100);
+      html+=`<td style="color:${pct>=50?'var(--green)':'var(--red)'}">${pct}%<br><span style="font-size:10px;color:var(--muted)">${d.w}/${d.g}</span></td>`;
+    });
+    html+=`</tr>`;
+  });
+  html+='</table>';
+  document.getElementById('wr-content').innerHTML=html;
+  document.getElementById('modal-winrate').classList.add('show');
+}
+
+function updateYearOptions(){
+  const years=[...new Set(state.games.map(g=>kstYear(g.date)))].sort((a,b)=>b-a);
+  const cy=kstNow().getUTCFullYear();
+  if(!years.includes(cy))years.unshift(cy);
+  ['ar-year','adm-year'].forEach(id=>{
+    const sel=document.getElementById(id);
+    const cur=sel.value;
+    sel.innerHTML='<option value="전체">전체</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
+    if(years.includes(parseInt(cur)))sel.value=cur;
+  });
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+load().then(()=>updateYearOptions());
+</script>
+</body>
+</html>
