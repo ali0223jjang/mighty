@@ -502,6 +502,8 @@ async function doSaveGame(){
   } else { showToast('저장 실패. 다시 시도해주세요'); }
 }
 
+const GEMINI_KEY='AIzaSyD3XTtQjKBeGlUZV_JbWCNUb0TNNhjI6ZI';
+
 async function handlePhoto(input) {
   const file = input.files[0];
   if(!file) return;
@@ -517,31 +519,26 @@ async function handlePhoto(input) {
       r.readAsDataURL(file);
     });
 
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'anthropic-dangerous-direct-browser-calls': 'true' },
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 200,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
-            { type: 'text', text: '이 마작 점수 기계 화면에서 숫자 4개를 읽어주세요. 화면에 다이아몬드 형태로 상/좌/우/하 위치에 숫자가 있습니다. 반드시 JSON 형식으로만 답하세요: {"top":숫자,"left":숫자,"right":숫자,"bottom":숫자} 숫자만 있고 다른 텍스트는 없어야 합니다.' }
+        contents: [{
+          parts: [
+            { inline_data: { mime_type: file.type, data: base64 } },
+            { text: '이 마작 점수 기계 화면에서 숫자 4개를 읽어주세요. 화면에 다이아몬드 형태로 상/좌/우/하 위치에 숫자가 있습니다. 반드시 JSON 형식으로만 답하세요: {"top":숫자,"left":숫자,"right":숫자,"bottom":숫자} 다른 텍스트 없이 JSON만 답하세요.' }
           ]
         }]
       })
     });
 
     const data = await resp.json();
-    const text = data.content[0].text.trim();
+    const text = data.candidates[0].content.parts[0].text.trim().replace(/```json|```/g,'');
     const scores = JSON.parse(text);
 
-    // 숫자×100 해서 실제 점수로 변환
-    const mapping = { top: scores.top, left: scores.left, right: scores.right, bottom: scores.bottom };
-    Object.entries(mapping).forEach(([pos, val]) => {
-      const input = document.getElementById('sc-'+pos);
-      if(input && val) input.value = Math.round(val) * 100;
+    Object.entries(scores).forEach(([pos, val]) => {
+      const inp = document.getElementById('sc-'+pos);
+      if(inp && val) inp.value = Math.round(val) * 100;
     });
     onScore();
     status.style.color = 'var(--green)';
